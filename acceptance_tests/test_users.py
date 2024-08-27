@@ -1,6 +1,6 @@
 from functions import LoginActionTesting, SignupTesting
 
-BASE_URL = "https://python-test-ezzat.azurewebsites.net"  # "http://localhost" #
+BASE_URL = "http://127.0.0.1/"  # "http://localhost" #
 
 
 def test_sign_up():
