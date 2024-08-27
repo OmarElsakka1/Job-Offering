@@ -4,3 +4,7 @@ flask-login
 matplotlib
 pandas
 pytest
+selenium
+chromedriver-py
+pytest-xdist
+pytest-nunit
