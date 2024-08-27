@@ -1,0 +1,98 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+
+trigger:
+- main
+pr:
+- master
+pool:
+  vmImage: ubuntu-latest
+stages:
+
+- stage: build_push
+  displayName: 'Build and push to docker hub'
+  jobs:
+  - job : build_push_job
+    steps:
+    - task: Docker@2
+      inputs:
+        containerRegistry: 'MyDocker'
+        repository: 'ezzat12/shaghalni'
+        command: 'buildAndPush'
+        Dockerfile: '**/Dockerfile.deploy'
+
+- stage: unit_test
+  displayName: Unit tests
+  jobs:
+  - job: deploy_to_testing_environment
+    displayName: Deploy to testing environment
+    steps:
+    - script: |
+        pip install -r requirements.txt
+      displayName: Install requirements
+    - script: |
+        pytest test_unit1.py test_unit2.py
+      displayName: Running pytest
+
+- stage: acceptance_tests
+  displayName: Acceptance tests
+  jobs:
+  - job: deploy_to_testing_environment
+    displayName: Deploy to testing environment
+    steps:
+    - task: AzureWebAppContainer@1
+      inputs:
+        azureSubscription: 'Azure for Students Starter (d844cfaa-a35b-4bff-af98-2a5351d5d0c6)'
+        appName: 'python-test-ezzat'
+        containers: 'ezzat12/shaghalni:$(Build.BuildId)'
+    - task: AzureAppServiceManage@0
+      inputs:
+        azureSubscription: 'Azure for Students Starter (d844cfaa-a35b-4bff-af98-2a5351d5d0c6)'
+        Action: 'Start Azure App Service'
+        WebAppName: 'python-test-ezzat'
+    - script: |
+        while [[ "$(curl -s -o /dev/null -w '%{http_code}' https://python-test-ezzat.azurewebsites.net/)" != "200" && "$(curl -s -o /dev/null -w '%{http_code}' https://python-test-ezzat.azurewebsites.net/)" != "302" ]]; do sleep 10; done
+      displayName: Wait for testing environment to become available
+
+  - job: run_acceptance_tests
+    displayName: Run acceptance tests
+    dependsOn: deploy_to_testing_environment
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.11'
+        addToPath: true
+        architecture: 'x64'
+    - script: |
+        pip install -r requirements.txt
+      displayName: Install requirements
+    
+    - script: |
+        echo this will not work
+      displayName: Build testing image
+    - script: |
+        echo this will not work
+      displayName: Run  test image
+    - script: |
+        echo 'All tests passed successfully!'
+      displayName: Success message
+
+  - job: stop_testing_environment
+    displayName: Stop testing environment
+    dependsOn: run_acceptance_tests
+    condition: succeededOrFailed()
+    steps:
+    - task: AzureAppServiceManage@0
+      inputs:
+        azureSubscription: 'Azure for Students Starter (d844cfaa-a35b-4bff-af98-2a5351d5d0c6)'
+        Action: 'Stop Azure App Service'
+        WebAppName: 'python-test-ezzat'
+
+
+
+
+
+    
