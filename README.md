@@ -22,7 +22,6 @@ This is a freelancing platform built using Flask framework.
 4. Complete the job and receive payment
 
 ## Contributors
-- Ezzat Eisawy
 - Omar El-Sakka
 
 ## License
